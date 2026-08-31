@@ -1,0 +1,108 @@
+# CMakeLists.txt
+# 1. Avisa qual a versão mínima do CMake necessária para ler este arquivo
+cmake_minimum_required(VERSION 3.10)
+
+# 2. Dá um nome ao seu projeto e avisa que a linguagem é C++
+project(SistemaBancario CXX)
+
+# 3. Manda gerar um executável (.exe) chamado "meu_app"
+# e avisa QUAIS arquivos .cpp ele precisa juntar (linkar) para criar esse app.
+# Obs: Não precisamos listar os .hpp aqui, o compilador os acha através dos #include
+add_executable(meu_app main.cpp ContaBancaria.cpp)
+/*
+* mkdir build (pasta pro lixo do compialdor)
+* cd build
+* cmake .. (gera o Makefile)
+* cmake --build . (gera meu_app.exe dentro da pasta build)
+*/
+
+# Procura a biblioteca no seu computador
+find_package(OpenGL REQUIRED)
+
+# Cria seu programa
+add_executable(meu_app main.cpp)
+
+# "Costura" a biblioteca externa no seu programa
+target_link_libraries(meu_app OpenGL::GL)
+
+# + PROJETOS COM VARIAS PASTAS
+
+cmake_minimum_required(VERSION 3.14)
+project(SistemaBancario CXX)
+
+# O C++ padrão que queremos usar (ex: C++20)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 1. Criamos o executável apontando para os .cpp dentro da pasta src/
+add_executable(meu_app 
+    src/main.cpp
+    src/ContaBancaria.cpp
+)
+
+# 2. O pulo do gato: Onde o compilador deve procurar os arquivos .hpp?
+# ${CMAKE_CURRENT_SOURCE_DIR} aponta automaticamente para a pasta raiz onde está o CMakeLists.txt
+target_include_directories(meu_app PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# INCLUIR BIBLIOTECAS EXTERNAS
+
+cmake_minimum_required(VERSION 3.14)
+project(SistemaBancario CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 1. Incluímos o módulo oficial do FetchContent que já vem no CMake
+include(FetchContent)
+
+# 2. Declaramos ONDE a biblioteca está e QUAL VERSÃO queremos baixar
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3 # Boa prática: SEMPRE fixe uma versão específica (tag)
+)
+
+# 3. Mandamos o CMake baixar e deixar a biblioteca disponível
+FetchContent_MakeAvailable(json)
+
+# Criamos o nosso executável normalmente
+add_executable(meu_app 
+    src/main.cpp
+    src/ContaBancaria.cpp
+)
+
+# Ensinamos onde estão nossos próprios headers
+target_include_directories(meu_app PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# 4. O GRANDE FINAL: Costuramos a biblioteca JSON no nosso programa
+# O nome "nlohmann_json::nlohmann_json" é o nome oficial que o criador da biblioteca definiu.
+target_link_libraries(meu_app PRIVATE nlohmann_json::nlohmann_json)
+
+exemplo de uso:
+#include "ContaBancaria.hpp"
+#include <nlohmann/json.hpp> // A biblioteca externa está pronta para uso!
+#include <iostream>
+
+// Um "apelido" para não ter que digitar nlohmann::json toda hora
+using json = nlohmann::json; 
+
+int main() {
+    ContaBancaria conta{"Ana", 500.0};
+
+    // Criando um objeto JSON moderno de forma extremamente simples
+    json dados_bancarios = {
+        {"titular", "Ana"},
+        {"saldo", conta.getSaldo()},
+        {"status", "Ativa"}
+    };
+
+    // O comando .dump(4) transforma o JSON em texto formatado com 4 espaços de indentação
+    std::cout << "--- Exportando dados para o Banco de Dados ---\n";
+    std::cout << dados_bancarios.dump(4) << '\n';
+
+    return 0;
+}
